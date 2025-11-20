@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crop Disease Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2d6a4f;
+      --secondary: #74c69d;
+      --bg: #f0fdf4;
+      --card: #ffffff;
+      --font: 'Poppins', sans-serif;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: var(--font);
+      background: url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1650&q=80') no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+    .container {
+      background-color: var(--card);
+      border-radius: 20px;
+      padding: 2.5rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: var(--shadow);
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    h1 {
+      font-weight: 500;
+      font-size: 1.8rem;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+    input[type="file"] {
+      margin: 1rem 0;
+      font-size: 0.95rem;
+      color: var(--primary);
+    }
+    #preview {
+      display: none;
+      max-width: 100%;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      border: 2px dashed var(--secondary);
+    }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: var(--secondary);
+    }
+    #result {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--secondary);
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 2rem 1.2rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Crop Disease Detection</h1>
+
+    <form id="upload-form">
+      <input type="file" id="image-input" accept="image/*" required>
+      <img id="preview" alt="Image Preview">
+      <br>
+      <button type="submit" id="detect-btn" disabled>Detect</button>
+    </form>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const imageInput = document.getElementById('image-input');
+    const preview = document.getElementById('preview');
+    const result = document.getElementById('result');
+    const detectBtn = document.getElementById('detect-btn');
+
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      if (!file) {
+        preview.style.display = "none";
+        detectBtn.disabled = true;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+        detectBtn.disabled = false;
+        result.textContent = "";
+      };
+      reader.readAsDataURL(file);
+    });
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      detectBtn.disabled = true;
+      result.textContent = "Analyzing…";
+
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const r = await fetch("/predict", {
+          method: "POST",
+          body: formData
+        });
+        const res = await r.json();
+        if (res.prediction) {
+          result.textContent = "Prediction: " + res.prediction;
+        } else {
+          result.textContent = "Error: Could not predict";
+        }
+      } catch (err) {
+        result.textContent = "Server error!";
+      } finally {
+        detectBtn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
